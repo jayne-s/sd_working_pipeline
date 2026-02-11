@@ -10,12 +10,21 @@ import sys
 # --- CONFIGURATION ---
 PORT = 1
 FILE_TO_SEND = "collection_test.pcap"  # The file you want to send to the client
-CAPTURE_SCRIPT = "/home/jay/capture.sh"
+
+"""
+CHANGE THIS
+"""
+CAPTURE_SCRIPT = "/home/jay/capture.sh" # <----------- Change This
+"""
+CHANGE THIS
+"""
+
 #CAPTURE_CHANNEL = 120
 #CAPTURE_MAC = "10:63:C8:A6:7F:C7"
 
 CAPTURE_CHANNEL = 153
-CAPTURE_MAC = "10:63:C8:A6:7F:C7"
+CAPTURE_MAC = ["10:63:C8:A6:7F:C7"]
+FILTER = ""
 
 # --- HELPER FUNCTIONS ---
 
@@ -28,8 +37,9 @@ def start_capture():
     try:
         # start_new_session=True creates a new process group.
         # This allows us to kill the script AND tcpdump together later.
+        MACS=",".join(CAPTURE_MAC)
         proc = subprocess.Popen(
-            ["/bin/bash", CAPTURE_SCRIPT, str(CAPTURE_CHANNEL), CAPTURE_MAC],
+            ["/bin/bash", CAPTURE_SCRIPT, str(CAPTURE_CHANNEL), MACS, FILTER],
             stdout=subprocess.DEVNULL, # Hide output to keep console clean
             stderr=subprocess.DEVNULL,
             start_new_session=True
@@ -123,16 +133,42 @@ try:
 
                 # --- RESTART CAPTURE ---
                 # We restart it immediately after the file is sent
-                subprocess.call(['rm', str(FILE_TO_SEND)], shell=True)
-                time.sleep(1.0) # Short buffer
+                subprocess.call(['rm', 'collection_test.pcap','-f'])
+                #time.sleep(1.0) # Short buffer
+                time.sleep(0.1) # Short buffer
+                capture_process = start_capture()
+            elif "GET_CMD" in command:
+                stop_capture(capture_process)
+                capture_process = None # Mark as stopped
+                
+                arr = command.split(" ")
+                arr.pop(0)
+                CAPTURE_CHANNEL = arr[0]
+                arr.pop(0)
+                FILTER = f"-b {arr[0]}" if arr[0] != "None" else ""
+                arr.pop(0)
+                CAPTURE_MAC = arr
+                msg_received = f"Receivted with vals {CAPTURE_CHANNEL} {FILTER} {CAPTURE_MAC}"
+                msg_received = bytes(msg_received,"utf-8")
+
+                client_sock.send(msg_received)
+
+                # --- RESTART CAPTURE ---
+                # We restart it immediately after the file is sent
+                subprocess.call(['rm', 'collection_test.pcap','-f'])
+                #time.sleep(1.0) # Short buffer
+                time.sleep(0.1) # Short buffer
                 capture_process = start_capture()
 
+
+#ooo
             else:
                 print(f"    [!] Unknown Command: {command}")
                 client_sock.send(b"ERROR: Unknown Command")
 
             # 4. Sync Sleep
-            time.sleep(1.0)
+            #time.sleep(1.0)
+            time.sleep(0.1)
 
 
         except Exception as e:
