@@ -14,7 +14,8 @@ INTERFACE="wlan0"
 MON_INTERFACE="mon0"
 PCAP="collection_test.pcap"
 BT_MAC="80:A9:97:28:46:4A" # obtained using = system_profiler SPBluetoothDataType
-PCAP_COUNT=20
+PCAP_COUNT=1000
+FILTER=$3
 ADDR=$2
 CHAN=$1
 
@@ -23,7 +24,7 @@ CHAN=$1
 echo "Starting CSI Collection Flow..."
 
 echo "Configuring Channel..."
-MCP_OUT=$(mcp -C 1 -N 1 -c $CHAN/20 -m $ADDR)
+MCP_OUT=$(mcp -C 1 -N 1 -c $CHAN/20 -m $ADDR $FILTER)
 
 echo "Bringing wlan0 Up..."
 sudo ifconfig $INTERFACE up
